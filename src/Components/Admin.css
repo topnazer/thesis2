@@ -1,0 +1,65 @@
+html {
+    margin:0;
+    padding:0;
+    font-family: 'Roboto', sans-serif;
+}
+.Admin-container {
+    display: flex;
+    flex-direction: row;
+}
+
+
+.Admin-header {
+    width: 100%;
+    height: 70px;
+    background-color: gray; 
+}
+
+.Admin-navbar {
+    background-color: rosybrown;
+    width: 350px;
+    height: 1000px;
+    align-items: center;
+    display: flex;
+    flex-direction: column;
+
+}
+.Admin-links {
+    display: flex;
+    flex-direction: column;
+    text-decoration: none;
+}
+
+.Admin-links button {
+  background: #FF4742;
+  border: 1px solid #FF4742;
+  border-radius: 6px;
+  box-shadow: rgba(0, 0, 0, 0.1) 1px 2px 4px;
+  box-sizing: border-box;
+  color: #FFFFFF;
+  cursor: pointer;
+  display: inline-block;
+  font-family: nunito,roboto,proxima-nova,"proxima nova",sans-serif;
+  font-size: 16px;
+  font-weight: 800;
+  line-height: 16px;
+  min-height: 40px;
+  outline: 0;
+  padding: 12px 14px;
+  text-align: center;
+  text-decoration: none;
+  margin: 30px;
+}
+a:link,a:visited,a:hover,a:active {
+    text-decoration: none;
+}
+
+.Admin-links button:hover    {
+    background-color: initial;
+  background-position: 0 0;
+  color: #FF4742;
+}
+
+.main-container {
+ display: flex;
+}
