@@ -1,50 +1,95 @@
+// File path: ./src/ACAFDashboard.js
+
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { getFirestore, doc, getDoc } from "firebase/firestore";
+import { getFirestore, collection, query, where, onSnapshot, getDoc, doc } from "firebase/firestore";
 import { auth } from "../firebase";
 
-const AcafDashboard = () => {
-  const [evaluationForm, setEvaluationForm] = useState([]);
+const ACAFDashboard = () => {
+  const [deanList, setDeanList] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
   const navigate = useNavigate();
   const db = getFirestore();
 
   useEffect(() => {
-    const fetchEvaluationForm = async () => {
-      const evaluationDoc = await getDoc(doc(db, "evaluations", "acaf"));
-      if (evaluationDoc.exists()) {
-        setEvaluationForm(evaluationDoc.data().questions);
-      } else {
-        console.error("No evaluation form found for acaf.");
+    const fetchDeans = async () => {
+      const user = auth.currentUser;
+      if (!user) {
+        navigate("/"); // Redirect to login if not authenticated
+        return;
+      }
+
+      try {
+        // Fetch the authenticated user's details
+        const userDoc = await getDoc(doc(db, "users", user.uid));
+        if (!userDoc.exists() || userDoc.data().role !== "ACAF") {
+          navigate("/"); // Redirect if the user is not ACAF
+          return;
+        }
+
+        // Fetch all deans from the Firestore database
+        const deanQuery = query(
+          collection(db, "users"),
+          where("role", "==", "Dean")
+        );
+
+        onSnapshot(deanQuery, (snapshot) => {
+          setDeanList(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
+        });
+
+        setLoading(false);
+      } catch (err) {
+        setError("Failed to fetch deans: " + err.message);
+        setLoading(false);
       }
     };
 
-    fetchEvaluationForm();
-  }, [db]);
+    fetchDeans();
+  }, [db, navigate]);
+
+  const handleEvaluateDean = (deanId) => {
+    navigate(`/evaluate-dean/${deanId}`, {
+      state: { redirectTo: "/acaf-dashboard" } // Redirect back to ACAF Dashboard
+    });
+  };
 
   const handleSignOut = async () => {
     try {
       await auth.signOut();
-      navigate("/"); // Redirect to the login page
+      navigate("/");
     } catch (error) {
-      console.error("Error signing out: ", error);
+      console.error("Error signing out:", error);
     }
   };
 
-  const handleEvaluate = () => {
-    console.log("Navigating to evaluate dean...");
-    navigate("/evaluate", { state: { evaluatedRole: "dean" } });
-  };
+  if (loading) {
+    return <p>Loading...</p>;
+  }
 
+  if (error) {
+    return <p>{error}</p>;
+  }
 
   return (
     <div>
-      <h1>acaf Dashboard</h1>
+      <h1>ACAF Dashboard</h1>
       <nav>
-        <button onClick={handleEvaluate}>Evaluate dean</button>
         <button onClick={handleSignOut}>Sign Out</button>
       </nav>
+      <section>
+        <h2>Evaluate Deans</h2>
+        <ul>
+          {deanList.map((dean) => (
+            <li key={dean.id}>
+              {dean.firstName} {dean.lastName}
+              <button onClick={() => handleEvaluateDean(dean.id)}>Evaluate</button>
+            </li>
+          ))}
+        </ul>
+      </section>
     </div>
   );
 };
 
-export default AcafDashboard;
+export default ACAFDashboard;

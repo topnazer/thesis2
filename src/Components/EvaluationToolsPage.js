@@ -1,7 +1,5 @@
-// File path: ./src/EvaluationToolsPage.js
-
 import React, { useState, useEffect, useCallback } from 'react';
-import { getFirestore, doc, setDoc, collection, getDocs } from "firebase/firestore";
+import { getFirestore, doc, setDoc, collection, getDocs, getDoc } from "firebase/firestore";
 
 const EvaluationToolsPage = () => {
   const [selectedUserEvaluations, setSelectedUserEvaluations] = useState([]);
@@ -9,8 +7,12 @@ const EvaluationToolsPage = () => {
   const [subjects, setSubjects] = useState([]);
   const [selectedSubject, setSelectedSubject] = useState("");
   const [newQuestion, setNewQuestion] = useState("");
+  const [facultyQuestions, setFacultyQuestions] = useState([]); // For faculty evaluation form
+  const [deanQuestions, setDeanQuestions] = useState([]); // For dean evaluation form
+  const [currentFormType, setCurrentFormType] = useState(""); // To track current form type
   const db = getFirestore();
 
+  // Fetch subjects from Firestore
   const fetchSubjects = useCallback(async () => {
     try {
       const subjectsCollection = collection(db, "subjects");
@@ -25,38 +27,91 @@ const EvaluationToolsPage = () => {
     }
   }, [db]);
 
+  // Fetch the existing faculty evaluation form
+  const fetchFacultyEvaluationForm = useCallback(async () => {
+    try {
+      const facultyEvaluationDoc = await getDoc(doc(db, "facultyEvaluations", "default"));
+      if (facultyEvaluationDoc.exists()) {
+        setFacultyQuestions(facultyEvaluationDoc.data().questions);
+      } else {
+        setFacultyQuestions([]); // Initialize if no form exists
+      }
+    } catch (error) {
+      console.error("Error fetching faculty evaluation form:", error);
+    }
+  }, [db]);
+
+  // Fetch the existing dean evaluation form
+  const fetchDeanEvaluationForm = useCallback(async () => {
+    try {
+      const deanEvaluationDoc = await getDoc(doc(db, "deanEvaluations", "default"));
+      if (deanEvaluationDoc.exists()) {
+        setDeanQuestions(deanEvaluationDoc.data().questions);
+      } else {
+        setDeanQuestions([]); // Initialize if no form exists
+      }
+    } catch (error) {
+      console.error("Error fetching dean evaluation form:", error);
+    }
+  }, [db]);
+
+  // Add a new question to the selected evaluation form
   const addQuestion = () => {
     if (!newQuestion.trim()) return;
-    setEvaluationForms((prevForms) => ({
-      ...prevForms,
-      [selectedSubject]: [...(prevForms[selectedSubject] || []), { text: newQuestion }],
-    }));
+
+    if (currentFormType === "Subject" && selectedSubject) {
+      setEvaluationForms((prevForms) => ({
+        ...prevForms,
+        [selectedSubject]: [...(prevForms[selectedSubject] || []), { text: newQuestion }],
+      }));
+    } else if (currentFormType === "Faculty") {
+      setFacultyQuestions([...facultyQuestions, { text: newQuestion }]);
+    } else if (currentFormType === "Dean") {
+      setDeanQuestions([...deanQuestions, { text: newQuestion }]);
+    }
+
     setNewQuestion("");
   };
 
+  // Delete a question from the selected evaluation form
   const deleteQuestion = (index) => {
-    setEvaluationForms((prevForms) => {
-      const updatedQuestions = prevForms[selectedSubject].filter((_, i) => i !== index);
-      return {
-        ...prevForms,
-        [selectedSubject]: updatedQuestions,
-      };
-    });
+    if (currentFormType === "Subject" && selectedSubject) {
+      setEvaluationForms((prevForms) => {
+        const updatedQuestions = prevForms[selectedSubject].filter((_, i) => i !== index);
+        return {
+          ...prevForms,
+          [selectedSubject]: updatedQuestions,
+        };
+      });
+    } else if (currentFormType === "Faculty") {
+      setFacultyQuestions(facultyQuestions.filter((_, i) => i !== index));
+    } else if (currentFormType === "Dean") {
+      setDeanQuestions(deanQuestions.filter((_, i) => i !== index));
+    }
   };
 
+  // Save the evaluation form to Firestore
   const handleSaveForm = async () => {
-    if (!selectedSubject) {
-      alert("Please select a subject");
-      return;
+    if (currentFormType === "Subject" && selectedSubject) {
+      const formRef = doc(db, "evaluationForms", selectedSubject);
+      await setDoc(formRef, { questions: evaluationForms[selectedSubject] || [] });
+      alert("Subject evaluation form saved successfully!");
+    } else if (currentFormType === "Faculty") {
+      const facultyFormRef = doc(db, "facultyEvaluations", "default");
+      await setDoc(facultyFormRef, { questions: facultyQuestions });
+      alert("Faculty evaluation form saved successfully!");
+    } else if (currentFormType === "Dean") {
+      const deanFormRef = doc(db, "deanEvaluations", "default");
+      await setDoc(deanFormRef, { questions: deanQuestions });
+      alert("Dean evaluation form saved successfully!");
     }
-    const formRef = doc(db, "evaluationForms", selectedSubject);
-    await setDoc(formRef, { questions: evaluationForms[selectedSubject] || [] });
-    alert("Evaluation form saved successfully!");
   };
 
   useEffect(() => {
     fetchSubjects();
-  }, [fetchSubjects]);
+    fetchFacultyEvaluationForm(); // Fetch faculty evaluation form on mount
+    fetchDeanEvaluationForm(); // Fetch dean evaluation form on mount
+  }, [fetchSubjects, fetchFacultyEvaluationForm, fetchDeanEvaluationForm]);
 
   return (
     <div>
@@ -75,21 +130,26 @@ const EvaluationToolsPage = () => {
       )}
 
       <h2>Create or Edit Evaluation Form for Subjects</h2>
-      <label htmlFor="subjectSelect">Select Subject:</label>
-      <select
-        id="subjectSelect"
-        value={selectedSubject}
-        onChange={(e) => setSelectedSubject(e.target.value)}
-      >
-        <option value="" disabled>Select a subject</option>
-        {subjects.map((subject) => (
-          <option key={subject.id} value={subject.id}>
-            {subject.name}
-          </option>
-        ))}
-      </select>
+      <div>
+        <label htmlFor="subjectSelect">Select Subject:</label>
+        <select
+          id="subjectSelect"
+          value={selectedSubject}
+          onChange={(e) => {
+            setSelectedSubject(e.target.value);
+            setCurrentFormType("Subject");
+          }}
+        >
+          <option value="" disabled>Select a subject</option>
+          {subjects.map((subject) => (
+            <option key={subject.id} value={subject.id}>
+              {subject.name}
+            </option>
+          ))}
+        </select>
+      </div>
 
-      {selectedSubject && (
+      {selectedSubject && currentFormType === "Subject" && (
         <div>
           <ul>
             {(evaluationForms[selectedSubject] || []).map((question, index) => (
@@ -109,6 +169,52 @@ const EvaluationToolsPage = () => {
           <button onClick={handleSaveForm}>Save Form</button>
         </div>
       )}
+
+      <h2>Create or Edit Evaluation Form for Faculty</h2>
+      <div>
+        <ul>
+          {facultyQuestions.map((question, index) => (
+            <li key={index}>
+              {question.text}
+              <button onClick={() => deleteQuestion(index)}>Delete</button>
+            </li>
+          ))}
+        </ul>
+        <input
+          type="text"
+          value={newQuestion}
+          onChange={(e) => {
+            setNewQuestion(e.target.value);
+            setCurrentFormType("Faculty");
+          }}
+          placeholder="Add a new question"
+        />
+        <button onClick={addQuestion}>Add Question</button>
+        <button onClick={handleSaveForm}>Save Form</button>
+      </div>
+
+      <h2>Create or Edit Evaluation Form for Deans</h2>
+      <div>
+        <ul>
+          {deanQuestions.map((question, index) => (
+            <li key={index}>
+              {question.text}
+              <button onClick={() => deleteQuestion(index)}>Delete</button>
+            </li>
+          ))}
+        </ul>
+        <input
+          type="text"
+          value={newQuestion}
+          onChange={(e) => {
+            setNewQuestion(e.target.value);
+            setCurrentFormType("Dean");
+          }}
+          placeholder="Add a new question"
+        />
+        <button onClick={addQuestion}>Add Question</button>
+        <button onClick={handleSaveForm}>Save Form</button>
+      </div>
     </div>
   );
 };

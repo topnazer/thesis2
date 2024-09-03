@@ -22,17 +22,15 @@ const LoginForm = ({ toggleSignUp }) => {
         const userData = userDoc.data();
         console.log("User role:", userData.role);
 
-        if (userData.role === "Admin") {
-          navigate("/admin-dashboard");
-          return;
-        }
-
         if (userData.status !== "Approved") {
           alert("Your account is not approved yet.");
           return;
         }
 
         switch (userData.role) {
+          case "Admin":
+            navigate("/admin-dashboard");
+            break;
           case "Faculty":
             navigate("/faculty-dashboard");
             break;
@@ -41,6 +39,9 @@ const LoginForm = ({ toggleSignUp }) => {
             break;
           case "Student":
             navigate("/student-dashboard");
+            break;
+          case "ACAF":  // Added ACAF role case
+            navigate("/acaf-dashboard");
             break;
           default:
             alert("Access denied: Unknown role.");
@@ -57,7 +58,6 @@ const LoginForm = ({ toggleSignUp }) => {
   };
 
   return (
-    
     <div className="auth-page">   
       <div className="auth-container">
         <div className="auth-left">

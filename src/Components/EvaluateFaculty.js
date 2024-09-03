@@ -1,62 +1,52 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import { useParams, useNavigate, useLocation } from 'react-router-dom'; // Import useNavigate and useLocation
-import { getFirestore, doc, getDoc, setDoc } from 'firebase/firestore';
-import { auth } from "../firebase";
+import { getFirestore, doc, getDoc, setDoc, collection } from 'firebase/firestore';
+import { auth } from '../firebase';
 
-const EvaluateSubject = () => {
-  const { subjectId } = useParams();
+const EvaluateFaculty = () => {
+  const { facultyId } = useParams(); 
   const navigate = useNavigate(); // Initialize useNavigate
   const location = useLocation(); // Initialize useLocation
-  const [subject, setSubject] = useState(null);
-  const [faculty, setFaculty] = useState(null);
-  const [evaluationForm, setEvaluationForm] = useState([]);
+  const [faculty, setFaculty] = useState(null); 
+  const [evaluationForm, setEvaluationForm] = useState([]); 
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [responses, setResponses] = useState([]);
   const [comment, setComment] = useState(""); 
   const db = getFirestore();
 
-  const fetchSubject = useCallback(async () => {
+  const fetchFaculty = useCallback(async () => {
     try {
-      const subjectDoc = await getDoc(doc(db, "subjects", subjectId));
-      if (subjectDoc.exists()) {
-        setSubject(subjectDoc.data());
-        const facultyId = subjectDoc.data().facultyId;
-        if (facultyId) {
-          const facultyDoc = await getDoc(doc(db, "users", facultyId));
-          if (facultyDoc.exists()) {
-            setFaculty(facultyDoc.data());
-          } else {
-            setError("Faculty not found for the subject.");
-          }
-        }
+      const facultyDoc = await getDoc(doc(db, 'users', facultyId));
+      if (facultyDoc.exists()) {
+        setFaculty(facultyDoc.data());
       } else {
-        setError("Subject not found");
+        setError('Faculty member not found.');
       }
     } catch (error) {
-      setError("Error fetching subject: " + error.message);
+      setError('Error fetching faculty: ' + error.message);
     } finally {
       setLoading(false);
     }
-  }, [db, subjectId]);
+  }, [db, facultyId]);
 
   const fetchEvaluationForm = useCallback(async () => {
     try {
-      const evaluationDoc = await getDoc(doc(db, "evaluationForms", subjectId));
+      const evaluationDoc = await getDoc(doc(db, 'facultyEvaluations', 'default'));
       if (evaluationDoc.exists()) {
         setEvaluationForm(evaluationDoc.data().questions);
       } else {
-        setError("No evaluation form found for this subject.");
+        setError('No evaluation form found for faculty.');
       }
     } catch (error) {
-      setError("Error fetching evaluation form: " + error.message);
+      setError('Error fetching evaluation form: ' + error.message);
     }
-  }, [db, subjectId]);
+  }, [db]);
 
   useEffect(() => {
-    fetchSubject();
+    fetchFaculty();
     fetchEvaluationForm();
-  }, [fetchSubject, fetchEvaluationForm]);
+  }, [fetchFaculty, fetchEvaluationForm]);
 
   const handleResponseChange = (index, value) => {
     const updatedResponses = [...responses];
@@ -72,36 +62,34 @@ const EvaluateSubject = () => {
     const percentageScore = (totalScore / maxScore) * 100;
 
     const user = auth.currentUser;
-
     if (!user) {
-      alert("User not authenticated.");
+      alert('User not authenticated.');
       return;
     }
 
     try {
-      const evaluationRef = doc(db, `students/${user.uid}/subjects/${subjectId}/completed_evaluations`, user.uid);
+      const evaluationRef = doc(collection(db, 'facultyEvaluations', facultyId, 'completed_evaluations'), user.uid);
 
       await setDoc(evaluationRef, {
         userId: user.uid,
-        subjectId,
-        facultyId: subject?.facultyId || null,
+        facultyId: facultyId,
         scores: responses,
         comment: comment,
         percentageScore,
         createdAt: new Date(),
       });
 
-      alert("Evaluation submitted successfully!");
+      alert('Evaluation submitted successfully!');
       
-      // Navigate back to the Student Dashboard
-      navigate(location.state?.redirectTo || "/student-dashboard");
+      // Navigate back to the Faculty Dashboard
+      navigate(location.state?.redirectTo || "/faculty-dashboard");
     } catch (error) {
-      alert("Failed to submit evaluation. Please try again.");
+      alert('Failed to submit evaluation. Please try again.');
     }
   };
 
   if (loading) {
-    return <p>Loading subject data...</p>;
+    return <p>Loading faculty data...</p>;
   }
 
   if (error) {
@@ -110,14 +98,14 @@ const EvaluateSubject = () => {
 
   return (
     <div>
-      <h1>Evaluate {subject.name}</h1>
-      <h2>Faculty: {faculty ? `${faculty.firstName} ${faculty.lastName}` : "No faculty assigned"}</h2>
+      <h1>Evaluate {faculty ? `${faculty.firstName} ${faculty.lastName}` : 'Faculty'}</h1>
+      <h2>Department: {faculty ? faculty.department : 'No department available'}</h2>
       <form onSubmit={handleSubmit}>
         {evaluationForm.map((question, index) => (
           <div key={index}>
             <label>{question.text}</label>
             <select
-              value={responses[index] || ""}
+              value={responses[index] || ''}
               onChange={(e) => handleResponseChange(index, e.target.value)}
               required
             >
@@ -144,4 +132,4 @@ const EvaluateSubject = () => {
   );
 };
 
-export default EvaluateSubject;
+export default EvaluateFaculty;

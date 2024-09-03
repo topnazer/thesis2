@@ -80,8 +80,11 @@ const StudentDashboard = () => {
   };
 
   const handleEvaluateSubject = (subjectId) => {
-    navigate(`/evaluate-subject/${subjectId}`);
+    navigate(`/evaluate-subject/${subjectId}`, {
+      state: { redirectTo: "/student-dashboard" } // Pass the redirect path as state
+    });
   };
+  
 
   return (
     <div>

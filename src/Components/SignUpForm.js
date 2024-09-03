@@ -110,6 +110,7 @@ const SignUpForm = ({ toggleLogin }) => {
             <option value="Student">Student</option>
             <option value="Faculty">Faculty</option>
             <option value="Dean">Dean</option>
+            <option value="ACAF">ACAF</option> {/* New ACAF Role */}
           </select>
           <button type="submit" className="signup-button">Sign Up</button>
         </form>
