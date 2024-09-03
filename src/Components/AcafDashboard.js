@@ -5,7 +5,7 @@ import { useNavigate } from "react-router-dom";
 import { getFirestore, collection, query, where, onSnapshot, getDoc, doc } from "firebase/firestore";
 import { auth } from "../firebase";
 
-const ACAFDashboard = () => {
+const AcafDashboard = () => {
   const [deanList, setDeanList] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -92,4 +92,4 @@ const ACAFDashboard = () => {
   );
 };
 
-export default ACAFDashboard;
+export default AcafDashboard;

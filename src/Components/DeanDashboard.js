@@ -1,12 +1,12 @@
-// File path: ./src/DeanDashboard.js
-
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { getFirestore, getDoc, collection, onSnapshot, doc, query, where } from "firebase/firestore";
+import { getFirestore, collection, doc, getDoc, onSnapshot, query, where } from "firebase/firestore";
 import { auth } from "../firebase";
 
 const DeanDashboard = () => {
   const [facultyList, setFacultyList] = useState([]);
+  const [evaluationReports, setEvaluationReports] = useState([]);
+  const [evaluatorNames, setEvaluatorNames] = useState({});
   const navigate = useNavigate();
   const db = getFirestore();
 
@@ -31,12 +31,44 @@ const DeanDashboard = () => {
       }
     };
 
+    const fetchEvaluationReports = async () => {
+      const user = auth.currentUser;
+      if (!user) return;
+
+      const evaluationsCollection = collection(db, "deanEvaluations", user.uid, "completed_evaluations");
+      const snapshot = await onSnapshot(evaluationsCollection, async (snapshot) => {
+        const reports = snapshot.docs.map(doc => doc.data());
+        setEvaluationReports(reports);
+
+        const evaluatorIds = reports.map(report => report.userId);
+        const namesToFetch = evaluatorIds.filter(id => !evaluatorNames[id]);
+        const evaluatorNamesCopy = { ...evaluatorNames };
+
+        // Fetch names for any evaluator IDs that haven't been fetched yet
+        if (namesToFetch.length > 0) {
+          const namePromises = namesToFetch.map(async (userId) => {
+            const userDoc = await getDoc(doc(db, "users", userId));
+            if (userDoc.exists()) {
+              const userData = userDoc.data();
+              evaluatorNamesCopy[userId] = `${userData.firstName} ${userData.lastName}`;
+            } else {
+              evaluatorNamesCopy[userId] = "Unknown Evaluator";
+            }
+          });
+
+          await Promise.all(namePromises);
+          setEvaluatorNames(evaluatorNamesCopy);
+        }
+      });
+    };
+
     fetchFacultyInDepartment();
-  }, [db]);
+    fetchEvaluationReports();
+  }, [db, evaluatorNames]);
 
   const handleEvaluateFaculty = (facultyId) => {
     navigate(`/evaluate-faculty/${facultyId}`, {
-      state: { redirectTo: "/dean-dashboard" } // Redirect back to Dean Dashboard
+      state: { redirectTo: "/dean-dashboard" }
     });
   };
 
@@ -65,6 +97,23 @@ const DeanDashboard = () => {
             </li>
           ))}
         </ul>
+      </section>
+
+      <section>
+        <h2>Evaluation Report</h2>
+        {evaluationReports.length > 0 ? (
+          <ul>
+            {evaluationReports.map((report, index) => (
+              <li key={index}>
+                <p>Evaluator: {evaluatorNames[report.userId] || report.userId}</p>
+                <p>Average Score: {report.percentageScore.toFixed(2)}%</p>
+                <p>Comments: {report.comment}</p>
+              </li>
+            ))}
+          </ul>
+        ) : (
+          <p>No evaluations submitted yet.</p>
+        )}
       </section>
     </div>
   );

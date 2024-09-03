@@ -1,18 +1,18 @@
 import React, { useEffect, useState, useCallback } from 'react';
-import { useParams, useNavigate, useLocation } from 'react-router-dom'; // Import useNavigate and useLocation
+import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { getFirestore, doc, getDoc, setDoc, collection } from 'firebase/firestore';
 import { auth } from '../firebase';
 
 const EvaluateFaculty = () => {
-  const { facultyId } = useParams(); 
-  const navigate = useNavigate(); // Initialize useNavigate
-  const location = useLocation(); // Initialize useLocation
-  const [faculty, setFaculty] = useState(null); 
-  const [evaluationForm, setEvaluationForm] = useState([]); 
+  const { facultyId } = useParams();
+  const navigate = useNavigate();
+  const location = useLocation();
+  const [faculty, setFaculty] = useState(null);
+  const [evaluationForm, setEvaluationForm] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [responses, setResponses] = useState([]);
-  const [comment, setComment] = useState(""); 
+  const [comment, setComment] = useState("");
   const db = getFirestore();
 
   const fetchFaculty = useCallback(async () => {
@@ -68,8 +68,8 @@ const EvaluateFaculty = () => {
     }
 
     try {
+      // Store the evaluation
       const evaluationRef = doc(collection(db, 'facultyEvaluations', facultyId, 'completed_evaluations'), user.uid);
-
       await setDoc(evaluationRef, {
         userId: user.uid,
         facultyId: facultyId,
@@ -79,9 +79,30 @@ const EvaluateFaculty = () => {
         createdAt: new Date(),
       });
 
+      // Update average score
+      const facultyEvaluationRef = doc(db, 'facultyEvaluations', facultyId);
+      const facultyEvaluationDoc = await getDoc(facultyEvaluationRef);
+      let newAverageScore;
+
+      if (facultyEvaluationDoc.exists()) {
+        const existingAverageScore = facultyEvaluationDoc.data().averageScore || 0;
+        const completedEvaluations = (facultyEvaluationDoc.data().completedEvaluations || 0) + 1;
+        newAverageScore = ((existingAverageScore * (completedEvaluations - 1)) + percentageScore) / completedEvaluations;
+
+        await setDoc(facultyEvaluationRef, {
+          averageScore: newAverageScore,
+          completedEvaluations,
+        }, { merge: true });
+      } else {
+        // If no previous evaluations, set the first score as the average
+        newAverageScore = percentageScore;
+        await setDoc(facultyEvaluationRef, {
+          averageScore: newAverageScore,
+          completedEvaluations: 1,
+        });
+      }
+
       alert('Evaluation submitted successfully!');
-      
-      // Navigate back to the Faculty Dashboard
       navigate(location.state?.redirectTo || "/faculty-dashboard");
     } catch (error) {
       alert('Failed to submit evaluation. Please try again.');

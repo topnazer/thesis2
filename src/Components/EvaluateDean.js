@@ -1,5 +1,3 @@
-// File path: ./src/EvaluateDean.js
-
 import React, { useEffect, useState, useCallback } from 'react';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { getFirestore, doc, getDoc, setDoc, collection } from 'firebase/firestore';
@@ -70,8 +68,8 @@ const EvaluateDean = () => {
     }
 
     try {
+      // Store the evaluation in the completed_evaluations subcollection
       const evaluationRef = doc(collection(db, 'deanEvaluations', deanId, 'completed_evaluations'), user.uid);
-
       await setDoc(evaluationRef, {
         userId: user.uid,
         deanId: deanId,
@@ -81,8 +79,31 @@ const EvaluateDean = () => {
         createdAt: new Date(),
       });
 
+      // Update average score and completed evaluations in the main document
+      const deanEvaluationRef = doc(db, 'deanEvaluations', deanId);
+      const deanEvaluationDoc = await getDoc(deanEvaluationRef);
+      let newAverageScore;
+
+      if (deanEvaluationDoc.exists()) {
+        const existingAverageScore = deanEvaluationDoc.data().averageScore || 0;
+        const completedEvaluations = (deanEvaluationDoc.data().completedEvaluations || 0) + 1;
+        newAverageScore = ((existingAverageScore * (completedEvaluations - 1)) + percentageScore) / completedEvaluations;
+
+        await setDoc(deanEvaluationRef, {
+          averageScore: newAverageScore,
+          completedEvaluations,
+        }, { merge: true });
+      } else {
+        // If no previous evaluations, set the first score as the average
+        newAverageScore = percentageScore;
+        await setDoc(deanEvaluationRef, {
+          averageScore: newAverageScore,
+          completedEvaluations: 1,
+        });
+      }
+
       alert('Evaluation submitted successfully!');
-      navigate(location.state?.redirectTo || "/acaf-dashboard");
+      navigate(location.state?.redirectTo || "/dean-dashboard");
     } catch (error) {
       alert('Failed to submit evaluation. Please try again.');
     }

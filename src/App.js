@@ -9,7 +9,7 @@ import EvaluationForm from "./Components/EvaluationForm";
 import EvaluateSubject from './Components/EvaluateSubject';
 import EvaluateFaculty from './Components/EvaluateFaculty';
 import EvaluateDean from './Components/EvaluateDean';
-import ACAFDashboard from "./Components/ACAFDashboard";
+import AcafDashboard from "./Components/AcafDashboard";
 
 function App() {
   return (
@@ -24,7 +24,7 @@ function App() {
         <Route path="/evaluate-faculty/:facultyId" element={<EvaluateFaculty />} /> {/* Route for EvaluateFaculty */}
         <Route path="/admin-dashboard/*" element={<AdminDashboard />} /> {/* Admin Route */}
         <Route path="/evaluate-dean/:deanId" element={<EvaluateDean />} />
-        <Route path="/acaf-dashboard" element={<ACAFDashboard />} />
+        <Route path="/acaf-dashboard" element={<AcafDashboard />} />
       </Routes>
     </Router>
   );
