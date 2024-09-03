@@ -9,7 +9,11 @@ import EvaluationForm from "./Components/EvaluationForm";
 import EvaluateSubject from './Components/EvaluateSubject';
 import EvaluateFaculty from './Components/EvaluateFaculty';
 import EvaluateDean from './Components/EvaluateDean';
+<<<<<<< HEAD
 import AcafDashboard from "./Components/AcafDashboard";
+=======
+import ACAFDashboard from "./Components/AcafDashboard";
+>>>>>>> origin/main
 
 function App() {
   return (

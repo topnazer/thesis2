@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { getFirestore, doc, setDoc, collection, getDocs, getDoc } from "firebase/firestore";
-
+import './AdminR.css';
 const EvaluationToolsPage = () => {
   const [selectedUserEvaluations, setSelectedUserEvaluations] = useState([]);
   const [evaluationForms, setEvaluationForms] = useState({});
