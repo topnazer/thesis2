@@ -3,7 +3,7 @@ html {
     padding:0;
     font-family: 'Roboto', sans-serif;
 }
-.Admin-container {
+.whole-container {
     display: flex;
     flex-direction: row;
 }
@@ -16,9 +16,10 @@ html {
 }
 
 .Admin-navbar {
-    background-color: rosybrown;
+    background-color: rgb(103, 99, 99);
+    position: relative;
     width: 350px;
-    height: 1000px;
+    height: 600px;
     align-items: center;
     display: flex;
     flex-direction: column;
@@ -30,28 +31,23 @@ html {
     text-decoration: none;
 }
 
-.Admin-links button {
-  background: #FF4742;
+.Admin-links a {
+  background: #df9795;
   border: 1px solid #FF4742;
   border-radius: 6px;
-  box-shadow: rgba(0, 0, 0, 0.1) 1px 2px 4px;
-  box-sizing: border-box;
   color: #FFFFFF;
   cursor: pointer;
   display: inline-block;
-  font-family: nunito,roboto,proxima-nova,"proxima nova",sans-serif;
   font-size: 16px;
   font-weight: 800;
-  line-height: 16px;
-  min-height: 40px;
-  outline: 0;
-  padding: 12px 14px;
+  padding: 12px 66px;
   text-align: center;
   text-decoration: none;
   margin: 30px;
 }
-a:link,a:visited,a:hover,a:active {
-    text-decoration: none;
+.Admin-links a:hover,.Admin-links a:focus {
+    background-color: rgb(157, 224, 157);
+    color: black;
 }
 
 .Admin-links button:hover    {
@@ -60,6 +56,18 @@ a:link,a:visited,a:hover,a:active {
   color: #FF4742;
 }
 
+
 .main-container {
  display: flex;
+ flex-direction: column;
+ width: 100%;
+ max-height: 650px;
+ overflow-y: auto;
+}
+
+.route-containers {
+    text-align: center;
+    background-color: azure;
+    align-items: center;
+    margin:20px ;
 }

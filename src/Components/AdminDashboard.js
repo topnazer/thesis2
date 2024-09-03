@@ -9,6 +9,8 @@ import EvaluationToolsPage from "./EvaluationToolsPage";
 import NotificationsPage from "./NotificationsPage";
 import Subjects from "./Subjects";
 import EvaluateSubject from "./EvaluateSubject";
+import './Admin.css';
+
 
 const AdminDashboard = () => {
   const [loading, setLoading] = useState(true);
@@ -44,23 +46,33 @@ const AdminDashboard = () => {
   if (!isAdmin) return <p>Access Denied</p>;
 
   return (
-    <div>
-      <h1>Admin Dashboard</h1>
-      <nav>
-        <ul>
-          <li><Link to="users">Users</Link></li>
-          <li><Link to="evaluation-tools">Evaluation Tools</Link></li>
-          <li><Link to="notifications">Notifications</Link></li>
-          <li><Link to="subjects">Subjects</Link></li>
-        </ul>
-      </nav>
-      <Routes>
-        <Route path="users" element={<UsersPage />} />
-        <Route path="evaluation-tools" element={<EvaluationToolsPage />} />
-        <Route path="notifications" element={<NotificationsPage />} />
-        <Route path="subjects" element={<Subjects />} />
-        <Route path="evaluate-subject/:subjectId" element={<EvaluateSubject />} />
-      </Routes>
+
+    <div className="whole-container">
+      <div className="Admin-navbar">
+        <div className="Admin-name">
+        <h2>Admin Dashboard</h2>
+        </div>
+        <div className="Admin-links">
+          <Link to="users">User</Link>
+          <Link to="evaluation-tools">Evaluation Tools</Link>
+          <Link to="notifications">Notifications</Link>
+          <Link to="subjects">Subjects</Link>
+        </div>
+      </div>
+      <div className="main-container">
+          <div className="Admin-header">
+            <p>Welcome, Admin! Here you can manage users, evaluation forms, and more.</p>
+          </div>
+            <div className="route-containers">
+              <Routes>
+                <Route path="users" element={<UsersPage />} />
+                <Route path="evaluation-tools" element={<EvaluationToolsPage />} />
+                <Route path="notifications" element={<NotificationsPage />} />
+                <Route path="subjects" element={<Subjects />} />
+                <Route path="evaluate-subject/:subjectId" element={<EvaluateSubject />} />
+              </Routes>
+            </div>  
+      </div>
     </div>
   );
 };

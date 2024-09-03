@@ -1,9 +1,7 @@
-// File path: ./src/UsersPage.js
-
-//new update
 
 import React, { useState, useEffect, useCallback } from 'react';
 import { getFirestore, collection, getDocs, query, where } from "firebase/firestore";
+import './AdminR.css';
 
 const UsersPage = () => {
   const [users, setUsers] = useState([]);
@@ -54,7 +52,7 @@ const UsersPage = () => {
     fetchUsersByDepartment(selectedDepartment);
   }, [fetchUsersByDepartment, selectedDepartment]);
 
-  const departments = ["CCS", "COC", "CED", "CASS", "COE", "CBA"];
+  const departments = ["CCS", "COC", "CED", "CASS", "COE", "CBA", "ACAF"];
 
   return (
     <div>

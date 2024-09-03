@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from "react";
 import { getFirestore, collection, addDoc, deleteDoc, updateDoc, onSnapshot, doc, setDoc, query, where, getDocs } from "firebase/firestore";
 import { auth } from "../firebase";
+import './AdminR.css';
 
 const Subjects = () => {
   const [subjects, setSubjects] = useState([]);
