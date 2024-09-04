@@ -8,11 +8,24 @@ import { auth } from "../firebase";
 const AcafDashboard = () => {
   const [deanList, setDeanList] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [userName, setUserName] = useState(""); // Sta
   const [error, setError] = useState(null);
   const navigate = useNavigate();
   const db = getFirestore();
 
   useEffect(() => {
+
+    const fetchUserInfo = async () => {
+      const user = auth.currentUser;
+      if (user) {
+        const userDoc = await getDoc(doc(db, "users", user.uid));
+        if (userDoc.exists()) {
+          const userData = userDoc.data();
+          setUserName(`${userData.firstName} ${userData.lastName}`);
+        }
+      }
+    };
+
     const fetchDeans = async () => {
       const user = auth.currentUser;
       if (!user) {
@@ -44,7 +57,7 @@ const AcafDashboard = () => {
         setLoading(false);
       }
     };
-
+  fetchUserInfo();
     fetchDeans();
   }, [db, navigate]);
 
@@ -73,9 +86,12 @@ const AcafDashboard = () => {
 
   return (
     <div>
+       <nav style={{ display: "flex", justifyContent: "space-between" }}>
       <h1>ACAF Dashboard</h1>
-      <nav>
-        <button onClick={handleSignOut}>Sign Out</button>
+        <div>
+          <span>{userName}</span> {/* Display the user's name */}
+          <button onClick={handleSignOut}>Sign Out</button>
+        </div>
       </nav>
       <section>
         <h2>Evaluate Deans</h2>
