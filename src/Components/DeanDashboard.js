@@ -1,16 +1,28 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { getFirestore, collection, doc, getDoc, onSnapshot, query, where } from "firebase/firestore";
+import { getFirestore, doc, getDoc, onSnapshot, collection, query, where } from "firebase/firestore";
 import { auth } from "../firebase";
 
 const DeanDashboard = () => {
   const [facultyList, setFacultyList] = useState([]);
   const [evaluationReports, setEvaluationReports] = useState([]);
   const [evaluatorNames, setEvaluatorNames] = useState({});
+  const [userName, setUserName] = useState(""); // State for the logged-in user's name
   const navigate = useNavigate();
   const db = getFirestore();
 
   useEffect(() => {
+    const fetchUserInfo = async () => {
+      const user = auth.currentUser;
+      if (user) {
+        const userDoc = await getDoc(doc(db, "users", user.uid));
+        if (userDoc.exists()) {
+          const userData = userDoc.data();
+          setUserName(`${userData.firstName} ${userData.lastName}`);
+        }
+      }
+    };
+
     const fetchFacultyInDepartment = async () => {
       const user = auth.currentUser;
       if (!user) return;
@@ -44,7 +56,6 @@ const DeanDashboard = () => {
         const namesToFetch = evaluatorIds.filter(id => !evaluatorNames[id]);
         const evaluatorNamesCopy = { ...evaluatorNames };
 
-        // Fetch names for any evaluator IDs that haven't been fetched yet
         if (namesToFetch.length > 0) {
           const namePromises = namesToFetch.map(async (userId) => {
             const userDoc = await getDoc(doc(db, "users", userId));
@@ -62,6 +73,7 @@ const DeanDashboard = () => {
       });
     };
 
+    fetchUserInfo();
     fetchFacultyInDepartment();
     fetchEvaluationReports();
   }, [db, evaluatorNames]);
@@ -83,10 +95,14 @@ const DeanDashboard = () => {
 
   return (
     <div>
-      <h1>Dean Dashboard</h1>
-      <nav>
-        <button onClick={handleSignOut}>Sign Out</button>
+      <nav style={{ display: "flex", justifyContent: "space-between" }}>
+        <h1>Dean Dashboard</h1>
+        <div>
+          <span>{userName}</span> {/* Display the user's name */}
+          <button onClick={handleSignOut}>Sign Out</button>
+        </div>
       </nav>
+      
       <section>
         <h2>Evaluate Faculty</h2>
         <ul>
