@@ -8,6 +8,7 @@ import EvaluationToolsPage from "./EvaluationToolsPage";
 import NotificationsPage from "./NotificationsPage";
 import Subjects from "./Subjects";
 import EvaluateSubject from "./EvaluateSubject";
+import EvaluationReportPage from "./EvaluationReportPage";
 import './Admin.css';
 
 
@@ -53,6 +54,7 @@ const AdminDashboard = () => {
           <Link to="evaluation-tools">Evaluation Tools</Link>
           <Link to="notifications">Notifications</Link>
           <Link to="subjects">Subjects</Link>
+          <Link to="evaluation-report">Evaluation Report</Link> 
         </div>
       </div>
       <div className="main-container">
@@ -66,6 +68,7 @@ const AdminDashboard = () => {
                 <Route path="notifications" element={<NotificationsPage />} />
                 <Route path="subjects" element={<Subjects />} />
                 <Route path="evaluate-subject/:subjectId" element={<EvaluateSubject />} />
+                <Route path="evaluation-report" element={<EvaluationReportPage />} />
               </Routes>
             </div>  
       </div>
