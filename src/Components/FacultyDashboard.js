@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { getFirestore, getDoc, collection, onSnapshot, doc, query, where } from "firebase/firestore";
+import { getFirestore, doc, getDoc, collection, onSnapshot, query, where } from "firebase/firestore";
 import { auth } from "../firebase";
 
 const FacultyDashboard = () => {
@@ -8,14 +8,25 @@ const FacultyDashboard = () => {
   const [notifications, setNotifications] = useState([]);
   const [subjects, setSubjects] = useState([]);
   const [facultyList, setFacultyList] = useState([]);
-  const [deanList, setDeanList] = useState([]);  // New state for deans
-  const [averageScore, setAverageScore] = useState(null); // State to store the average score
-  
+  const [deanList, setDeanList] = useState([]);
+  const [averageScore, setAverageScore] = useState(null);
+  const [userName, setUserName] = useState(""); // State for the logged-in user's name
 
   const navigate = useNavigate();
   const db = getFirestore();
 
   useEffect(() => {
+    const fetchUserInfo = async () => {
+      const user = auth.currentUser;
+      if (user) {
+        const userDoc = await getDoc(doc(db, "users", user.uid));
+        if (userDoc.exists()) {
+          const userData = userDoc.data();
+          setUserName(`${userData.firstName} ${userData.lastName}`);
+        }
+      }
+    };
+
     const fetchEvaluationForm = async () => {
       const evaluationDoc = await getDoc(doc(db, "evaluations", "faculty"));
       if (evaluationDoc.exists()) {
@@ -27,10 +38,8 @@ const FacultyDashboard = () => {
 
     const fetchNotifications = async () => {
       const user = auth.currentUser;
-      if (!user) {
-        console.error("User is not authenticated");
-        return;
-      }
+      if (!user) return;
+
       const notificationsCollection = collection(db, "notifications", user.uid, "userNotifications");
       onSnapshot(notificationsCollection, (snapshot) => {
         setNotifications(snapshot.docs.map(doc => doc.data()));
@@ -90,7 +99,7 @@ const FacultyDashboard = () => {
     const fetchAverageScore = async () => {
       const user = auth.currentUser;
       if (!user) return;
-    
+
       const facultyEvaluationDoc = await getDoc(doc(db, "facultyEvaluations", user.uid));
       if (facultyEvaluationDoc.exists()) {
         setAverageScore(facultyEvaluationDoc.data().averageScore);
@@ -98,13 +107,14 @@ const FacultyDashboard = () => {
         console.error("No average score found for this faculty.");
       }
     };
-    
+
+    fetchUserInfo();
     fetchEvaluationForm();
     fetchNotifications();
     fetchSubjects();
     fetchFacultyInDepartment();
     fetchAverageScore();
-    fetchDeansInDepartment();  // Fetch deans
+    fetchDeansInDepartment();
   }, [db]);
 
   const handleSignOut = async () => {
@@ -118,15 +128,18 @@ const FacultyDashboard = () => {
 
   const handleEvaluateFaculty = (facultyId) => {
     navigate(`/evaluate-faculty/${facultyId}`, {
-      state: { redirectTo: "/faculty-dashboard" } // Pass the redirect path as state
+      state: { redirectTo: "/faculty-dashboard" }
     });
   };
 
   return (
     <div>
-      <h1>Faculty Dashboard</h1>
-      <nav>
-        <button onClick={handleSignOut}>Sign Out</button>
+      <nav style={{ display: "flex", justifyContent: "space-between" }}>
+        <h1>Faculty Dashboard</h1>
+        <div>
+          <span>{userName}</span> {/* Display the user's name */}
+          <button onClick={handleSignOut}>Sign Out</button>
+        </div>
       </nav>
 
       <section>
