@@ -84,6 +84,7 @@ const SignUpForm = ({ toggleLogin }) => {
             <option value="CASS">CASS</option>
             <option value="COE">COE</option>
             <option value="CBA">CBA</option>
+            <option value="ACAF">ACAF</option>
           </select>
           <input
             type="email"
