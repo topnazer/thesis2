@@ -1,70 +1,97 @@
-// File path: ./src/StudentDashboard.js
-
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { getFirestore, getDoc, collection, onSnapshot, doc, query, where } from "firebase/firestore";
+import { getFirestore, getDoc, collection, onSnapshot, doc as firestoreDoc } from "firebase/firestore";
 import { auth } from "../firebase";
 
 const StudentDashboard = () => {
-  const [facultyToEvaluate, setFacultyToEvaluate] = useState([]);
   const [evaluationForm, setEvaluationForm] = useState([]);
   const [notifications, setNotifications] = useState([]);
   const [subjects, setSubjects] = useState([]);
+  const [userName, setUserName] = useState(""); // State for the logged-in user's name
 
   const navigate = useNavigate();
   const db = getFirestore();
 
-  useEffect(() => {
-    const fetchEvaluationForm = async () => {
-      try {
-        const evaluationDoc = await getDoc(doc(db, "evaluations", "student"));
-        if (evaluationDoc.exists()) {
-          setEvaluationForm(evaluationDoc.data().questions);
-        } else {
-          console.error("No evaluation form found for student.");
-        }
-      } catch (error) {
-        console.error("Error fetching evaluation form: ", error);
+  const fetchUserInfo = async () => {
+    const user = auth.currentUser;
+    if (user) {
+      const userDoc = await getDoc(firestoreDoc(db, "users", user.uid));
+      if (userDoc.exists()) {
+        const userData = userDoc.data();
+        setUserName(`${userData.firstName} ${userData.lastName}`);
       }
-    };
+    }
+  };
 
-    const fetchNotifications = async () => {
-      try {
-        const user = auth.currentUser;
-        if (!user) {
-          console.error("User is not authenticated");
-          return;
-        }
-        const notificationsCollection = collection(db, "notifications", user.uid, "userNotifications");
-        onSnapshot(notificationsCollection, (snapshot) => {
-          setNotifications(snapshot.docs.map(doc => doc.data()));
-        });
-      } catch (error) {
-        console.error("Error fetching notifications: ", error);
+  const fetchEvaluationForm = async () => {
+    try {
+      const evaluationDoc = await getDoc(firestoreDoc(db, "evaluations", "student"));
+      if (evaluationDoc.exists()) {
+        setEvaluationForm(evaluationDoc.data().questions);
+      } else {
+        console.error("No evaluation form found for student.");
       }
-    };
+    } catch (error) {
+      console.error("Error fetching evaluation form: ", error);
+    }
+  };
 
-    const fetchSubjects = async () => {
+  const fetchNotifications = async () => {
+    try {
       const user = auth.currentUser;
-      if (!user) {
-        console.error("User is not authenticated");
-        return;
-      }
+      if (!user) return;
 
-      try {
-        const subjectsCollection = collection(db, "students", user.uid, "subjects");
-        onSnapshot(subjectsCollection, (snapshot) => {
-          const fetchedSubjects = snapshot.docs.map((doc) => ({
-            id: doc.id,
-            ...doc.data(),
-          }));
-          setSubjects(fetchedSubjects);
-        });
-      } catch (error) {
-        console.error("Error fetching subjects: ", error);
-      }
-    };
+      const notificationsCollection = collection(db, "notifications", user.uid, "userNotifications");
+      onSnapshot(notificationsCollection, (snapshot) => {
+        setNotifications(snapshot.docs.map((doc) => doc.data()));
+      });
+    } catch (error) {
+      console.error("Error fetching notifications: ", error);
+    }
+  };
 
+  const fetchSubjects = async () => {
+    const user = auth.currentUser;
+    if (!user) return;
+
+    try {
+      const subjectsCollection = collection(db, "students", user.uid, "subjects");
+      onSnapshot(subjectsCollection, async (snapshot) => {
+        const fetchedSubjects = await Promise.all(
+          snapshot.docs.map(async (document) => {
+            const subjectData = { id: document.id, ...document.data() };
+
+            // Fetch faculty details for each subject
+            const subjectDoc = await getDoc(firestoreDoc(db, "subjects", subjectData.id));
+            if (subjectDoc.exists()) {
+              const facultyId = subjectDoc.data().facultyId;
+              if (facultyId) {
+                const facultyDoc = await getDoc(firestoreDoc(db, "users", facultyId));
+                if (facultyDoc.exists()) {
+                  subjectData.faculty = facultyDoc.data();
+                } else {
+                  subjectData.faculty = null;
+                }
+              } else {
+                subjectData.faculty = null;
+              }
+            } else {
+              subjectData.faculty = null;
+            }
+
+            return subjectData;
+          })
+        );
+
+        setSubjects(fetchedSubjects);
+      });
+    } catch (error) {
+      console.error("Error fetching subjects or faculty details:", error);
+    }
+  };
+
+  useEffect(() => {
+    fetchUserInfo();
     fetchEvaluationForm();
     fetchNotifications();
     fetchSubjects();
@@ -81,16 +108,18 @@ const StudentDashboard = () => {
 
   const handleEvaluateSubject = (subjectId) => {
     navigate(`/evaluate-subject/${subjectId}`, {
-      state: { redirectTo: "/student-dashboard" } // Pass the redirect path as state
+      state: { redirectTo: "/student-dashboard" }
     });
   };
-  
 
   return (
     <div>
-      <h1>Student Dashboard</h1>
-      <nav>
-        <button onClick={handleSignOut}>Sign Out</button>
+      <nav style={{ display: "flex", justifyContent: "space-between" }}>
+        <h1>Student Dashboard</h1>
+        <div>
+          <span>{userName}</span> {/* Display the user's name */}
+          <button onClick={handleSignOut}>Sign Out</button>
+        </div>
       </nav>
 
       <section>
@@ -99,7 +128,8 @@ const StudentDashboard = () => {
           <ul>
             {subjects.map((subject) => (
               <li key={subject.id}>
-                {subject.name}
+                <h3>{subject.name}</h3>
+                Faculty: {subject.faculty ? `${subject.faculty.firstName} ${subject.faculty.lastName}` : "No faculty assigned"}
                 <button onClick={() => handleEvaluateSubject(subject.id)}>Evaluate</button>
               </li>
             ))}
