@@ -2,12 +2,13 @@ import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { getFirestore, doc, getDoc, onSnapshot, collection, query, where } from "firebase/firestore";
 import { auth } from "../firebase";
+import './deandashboard.css'; // Add the new CSS file
 
 const DeanDashboard = () => {
   const [facultyList, setFacultyList] = useState([]);
   const [evaluationReports, setEvaluationReports] = useState([]);
   const [evaluatorNames, setEvaluatorNames] = useState({});
-  const [userName, setUserName] = useState(""); // State for the logged-in user's name
+  const [userName, setUserName] = useState(""); 
   const navigate = useNavigate();
   const db = getFirestore();
 
@@ -95,38 +96,61 @@ const DeanDashboard = () => {
 
   return (
     <div>
-      <nav style={{ display: "flex", justifyContent: "space-between" }}>
+      <nav>
         <h1>Dean Dashboard</h1>
         <div>
-          <span>{userName}</span> {/* Display the user's name */}
+          <span>{userName}</span>
           <button onClick={handleSignOut}>Sign Out</button>
         </div>
       </nav>
-      
+
+      {/* Updated "Evaluate Faculty" section to table format */}
       <section>
         <h2>Evaluate Faculty</h2>
-        <ul>
-          {facultyList.map((faculty) => (
-            <li key={faculty.id}>
-              {faculty.firstName} {faculty.lastName}
-              <button onClick={() => handleEvaluateFaculty(faculty.id)}>Evaluate</button>
-            </li>
-          ))}
-        </ul>
+        <table>
+          <thead>
+            <tr>
+              <th>ID</th>
+              <th>Faculty Name</th>
+              <th>Action</th>
+            </tr>
+          </thead>
+          <tbody>
+            {facultyList.map((faculty) => (
+              <tr key={faculty.id}>
+                <td>{faculty.id}</td>
+                <td>{faculty.firstName} {faculty.lastName}</td>
+                <td>
+                  <button onClick={() => handleEvaluateFaculty(faculty.id)}>Evaluate</button>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
       </section>
 
+      {/* Updated "Evaluation Report" section to table format */}
       <section>
         <h2>Evaluation Report</h2>
         {evaluationReports.length > 0 ? (
-          <ul>
-            {evaluationReports.map((report, index) => (
-              <li key={index}>
-                <p>Evaluator: {evaluatorNames[report.userId] || report.userId}</p>
-                <p>Average Score: {report.percentageScore.toFixed(2)}%</p>
-                <p>Comments: {report.comment}</p>
-              </li>
-            ))}
-          </ul>
+          <table>
+            <thead>
+              <tr>
+                <th>Evaluator</th>
+                <th>Average Score</th>
+                <th>Comments</th>
+              </tr>
+            </thead>
+            <tbody>
+              {evaluationReports.map((report, index) => (
+                <tr key={index}>
+                  <td>{evaluatorNames[report.userId] || report.userId}</td>
+                  <td>{report.percentageScore.toFixed(2)}%</td>
+                  <td>{report.comment}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
         ) : (
           <p>No evaluations submitted yet.</p>
         )}

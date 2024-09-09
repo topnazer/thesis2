@@ -134,10 +134,10 @@ const FacultyDashboard = () => {
 
   return (
     <div>
-      <nav style={{ display: "flex", justifyContent: "space-between" }}>
+      <nav>
         <h1>Faculty Dashboard</h1>
         <div>
-          <span>{userName}</span> {/* Display the user's name */}
+          <span>{userName}</span>
           <button onClick={handleSignOut}>Sign Out</button>
         </div>
       </nav>
@@ -151,30 +151,57 @@ const FacultyDashboard = () => {
         </ul>
       </section>
 
+      {/* Update the Evaluate Faculty section to a table format */}
       <section>
         <h2>Evaluate Faculty</h2>
-        <ul>
-          {facultyList.map((faculty) => (
-            <li key={faculty.id}>
-              {faculty.firstName} {faculty.lastName}
-              <button onClick={() => handleEvaluateFaculty(faculty.id)}>Evaluate</button>
-            </li>
-          ))}
-        </ul>
+        <table>
+          <thead>
+            <tr>
+              <th>ID</th>
+              <th>Faculty Name</th>
+              <th>Action</th>
+            </tr>
+          </thead>
+          <tbody>
+            {facultyList.map((faculty) => (
+              <tr key={faculty.id}>
+                <td>{faculty.id}</td>
+                <td>{faculty.firstName} {faculty.lastName}</td>
+                <td>
+                  <button onClick={() => handleEvaluateFaculty(faculty.id)}>Evaluate</button>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
       </section>
 
+      {/* Update the Evaluate Dean section to a table format */}
       <section>
         <h2>Evaluate Dean</h2>
-        <ul>
-          {deanList.map((dean) => (
-            <li key={dean.id}>
-              {dean.firstName} {dean.lastName}
-              <button onClick={() => navigate(`/evaluate-dean/${dean.id}`, { state: { redirectTo: "/faculty-dashboard" } })}>
+        <table>
+          <thead>
+            <tr>
+              <th>ID</th>
+              <th>Dean Name</th>
+              <th>Action</th>
+            </tr>
+          </thead>
+          <tbody>
+            {deanList.map((dean) => (
+              <tr key={dean.id}>
+                <td>{dean.id}</td>
+                <td>{dean.firstName} {dean.lastName}</td>
+                <td>
+                <button onClick={() => navigate(`/evaluate-dean/${dean.id}`, { state: { redirectTo: "/faculty-dashboard" } })}>
                 Evaluate
               </button>
-            </li>
-          ))}
-        </ul>
+
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
       </section>
 
       <section>

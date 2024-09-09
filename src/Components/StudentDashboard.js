@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { getFirestore, getDoc, collection, onSnapshot, doc as firestoreDoc } from "firebase/firestore";
 import { auth } from "../firebase";
+import './studentdashboard.css';
 
 const StudentDashboard = () => {
   const [evaluationForm, setEvaluationForm] = useState([]);
@@ -125,15 +126,30 @@ const StudentDashboard = () => {
       <section>
         <h2>Subjects</h2>
         {subjects.length > 0 ? (
-          <ul>
-            {subjects.map((subject) => (
-              <li key={subject.id}>
-                <h3>{subject.name}</h3>
-                Faculty: {subject.faculty ? `${subject.faculty.firstName} ${subject.faculty.lastName}` : "No faculty assigned"}
-                <button onClick={() => handleEvaluateSubject(subject.id)}>Evaluate</button>
-              </li>
-            ))}
-          </ul>
+          <table>
+            <thead>
+              <tr>
+                <th>ID</th>
+                <th>Subject</th>
+                <th>Faculty</th>
+                <th>Evaluate</th>
+              </tr>
+            </thead>
+            <tbody>
+              {subjects.map((subject) => (
+                <tr key={subject.id}>
+                  <td>{subject.id}</td>
+                  <td>{subject.name}</td>
+                  <td>{subject.faculty ? `${subject.faculty.firstName} ${subject.faculty.lastName}` : "No faculty assigned"}</td>
+                  <td>
+                    <button className="table-evaluate-btn" onClick={() => handleEvaluateSubject(subject.id)}>
+                      Evaluate
+                    </button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
         ) : (
           <p>No subjects available</p>
         )}
