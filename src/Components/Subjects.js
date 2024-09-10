@@ -1,16 +1,15 @@
-// File path: ./src/Subjects.js
+// File path: ./src/Components/Subjects.js
 
 import React, { useState, useEffect } from "react";
-import { getFirestore, collection, addDoc, deleteDoc, updateDoc, onSnapshot, doc, setDoc, query, where, getDocs } from "firebase/firestore";
-import { auth } from "../firebase";
+import { getFirestore, collection, deleteDoc, updateDoc, onSnapshot, doc, setDoc, query, where, getDocs } from "firebase/firestore"; // Removed 'addDoc' and 'auth'
 import './AdminR.css';
 
 const Subjects = () => {
   const [subjects, setSubjects] = useState([]);
   const [newSubjectName, setNewSubjectName] = useState("");
+  const [newSubjectId, setNewSubjectId] = useState(""); // New state for Subject ID
   const [editSubjectName, setEditSubjectName] = useState("");
-  const [subjectIdToEdit, setSubjectIdToEdit] = useState(null);
-  const [userId, setUserId] = useState(""); // For assigning subject to a specific user
+  const [subjectIdToEdit, setSubjectIdToEdit] = useState(null); // Removed setEditSubjectId
   const [role, setRole] = useState("student"); // Default role to assign subject to
   const [userEmail, setUserEmail] = useState(""); // Input for user email lookup
   const [foundUser, setFoundUser] = useState(null); // Stores the found user object
@@ -43,8 +42,8 @@ const Subjects = () => {
   }, [db]);
 
   const handleAddSubject = async () => {
-    if (!newSubjectName.trim()) {
-      alert("Subject name cannot be empty.");
+    if (!newSubjectName.trim() || !newSubjectId.trim()) {
+      alert("Subject name and ID cannot be empty.");
       return;
     }
 
@@ -54,20 +53,22 @@ const Subjects = () => {
     }
 
     try {
-      await addDoc(collection(db, "subjects"), {
+      await setDoc(doc(db, "subjects", newSubjectId), {
+        id: newSubjectId, // Store the subject ID explicitly
         name: newSubjectName,
         facultyId: selectedFaculty,
         createdAt: new Date(),
       });
-      setNewSubjectName(""); // Clear input field
+      setNewSubjectName(""); // Clear input fields
+      setNewSubjectId(""); // Clear subject ID input
     } catch (error) {
       console.error("Error adding subject:", error);
     }
   };
 
   const handleEditSubject = async () => {
-    if (!editSubjectName.trim()) {
-      alert("Subject name cannot be empty.");
+    if (!editSubjectName.trim() || !subjectIdToEdit) {
+      alert("Subject name and ID cannot be empty.");
       return;
     }
 
@@ -145,6 +146,12 @@ const Subjects = () => {
         onChange={(e) => setNewSubjectName(e.target.value)}
         placeholder="New subject name"
       />
+      <input
+        type="text"
+        value={newSubjectId}
+        onChange={(e) => setNewSubjectId(e.target.value)}
+        placeholder="Offer number" // New input for Subject ID
+      />
       <select
         value={selectedFaculty}
         onChange={(e) => setSelectedFaculty(e.target.value)}
@@ -181,23 +188,23 @@ const Subjects = () => {
 
       {/* List of subjects */}
       <ul>
-        {subjects.map((subject) => (
-          <li key={subject.id}>
-            {subject.name} - {subject.facultyId ? facultyList.find(f => f.id === subject.facultyId)?.email : "No faculty assigned"}
-            <button onClick={() => {
-              setEditSubjectName(subject.name);
-              setSubjectIdToEdit(subject.id);
-              setSelectedFaculty(subject.facultyId);
-            }}>Edit</button>
-            <button onClick={() => handleDeleteSubject(subject.id)}>Delete</button>
+  {subjects.map((subject) => (
+    <li key={subject.id}>
+      {subject.name} (ID: {subject.id}) - {subject.facultyId ? facultyList.find(f => f.id === subject.facultyId)?.email : "No faculty assigned"}
+      <button onClick={() => {
+        setEditSubjectName(subject.name);
+        setSubjectIdToEdit(subject.id);
+        setSelectedFaculty(subject.facultyId);
+      }}>Edit</button>
+      <button onClick={() => handleDeleteSubject(subject.id)}>Delete</button>
 
-            {/* Assign subject to found user */}
-            {foundUser && (
-              <button onClick={() => handleAssignSubjectToUser(subject.id)}>Assign to User</button>
-            )}
-          </li>
-        ))}
-      </ul>
+      {/* Assign subject to found user */}
+      {foundUser && (
+        <button onClick={() => handleAssignSubjectToUser(subject.id)}>Assign to User</button>
+      )}
+    </li>
+  ))}
+</ul>
 
       {/* Edit subject */}
       {subjectIdToEdit && (
