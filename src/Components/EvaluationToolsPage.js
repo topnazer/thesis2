@@ -1,18 +1,18 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { getFirestore, doc, setDoc, collection, getDocs, getDoc } from "firebase/firestore";
-import './AdminR.css';
+import './evaluationtoolspage.css'; // Import the new CSS file
+
 const EvaluationToolsPage = () => {
-  const [selectedUserEvaluations, setSelectedUserEvaluations] = useState([]);
   const [evaluationForms, setEvaluationForms] = useState({});
   const [subjects, setSubjects] = useState([]);
   const [selectedSubject, setSelectedSubject] = useState("");
   const [newQuestion, setNewQuestion] = useState("");
-  const [facultyQuestions, setFacultyQuestions] = useState([]); // For faculty evaluation form
-  const [deanQuestions, setDeanQuestions] = useState([]); // For dean evaluation form
-  const [currentFormType, setCurrentFormType] = useState(""); // To track current form type
+  const [editingIndex, setEditingIndex] = useState(null);
+  const [facultyQuestions, setFacultyQuestions] = useState([]);
+  const [deanQuestions, setDeanQuestions] = useState([]);
+  const [currentFormType, setCurrentFormType] = useState("");
   const db = getFirestore();
 
-  // Fetch subjects from Firestore
   const fetchSubjects = useCallback(async () => {
     try {
       const subjectsCollection = collection(db, "subjects");
@@ -27,7 +27,6 @@ const EvaluationToolsPage = () => {
     }
   }, [db]);
 
-  // Fetch the existing faculty evaluation form
   const fetchFacultyEvaluationForm = useCallback(async () => {
     try {
       const facultyEvaluationDoc = await getDoc(doc(db, "facultyEvaluations", "default"));
@@ -41,7 +40,6 @@ const EvaluationToolsPage = () => {
     }
   }, [db]);
 
-  // Fetch the existing dean evaluation form
   const fetchDeanEvaluationForm = useCallback(async () => {
     try {
       const deanEvaluationDoc = await getDoc(doc(db, "deanEvaluations", "default"));
@@ -55,33 +53,49 @@ const EvaluationToolsPage = () => {
     }
   }, [db]);
 
-  // Add a new question to the selected evaluation form
   const addQuestion = () => {
     if (!newQuestion.trim()) return;
 
-    if (currentFormType === "Subject" && selectedSubject) {
-      setEvaluationForms((prevForms) => ({
-        ...prevForms,
-        [selectedSubject]: [...(prevForms[selectedSubject] || []), { text: newQuestion }],
-      }));
-    } else if (currentFormType === "Faculty") {
-      setFacultyQuestions([...facultyQuestions, { text: newQuestion }]);
-    } else if (currentFormType === "Dean") {
-      setDeanQuestions([...deanQuestions, { text: newQuestion }]);
+    if (editingIndex !== null) {
+      // Editing an existing question
+      if (currentFormType === "Subject" && selectedSubject) {
+        setEvaluationForms((prevForms) => {
+          const updatedQuestions = [...(prevForms[selectedSubject] || [])];
+          updatedQuestions[editingIndex].text = newQuestion;
+          return { ...prevForms, [selectedSubject]: updatedQuestions };
+        });
+      } else if (currentFormType === "Faculty") {
+        const updatedQuestions = [...facultyQuestions];
+        updatedQuestions[editingIndex].text = newQuestion;
+        setFacultyQuestions(updatedQuestions);
+      } else if (currentFormType === "Dean") {
+        const updatedQuestions = [...deanQuestions];
+        updatedQuestions[editingIndex].text = newQuestion;
+        setDeanQuestions(updatedQuestions);
+      }
+      setEditingIndex(null); // Clear the edit mode
+    } else {
+      // Adding a new question
+      if (currentFormType === "Subject" && selectedSubject) {
+        setEvaluationForms((prevForms) => ({
+          ...prevForms,
+          [selectedSubject]: [...(prevForms[selectedSubject] || []), { text: newQuestion }],
+        }));
+      } else if (currentFormType === "Faculty") {
+        setFacultyQuestions([...facultyQuestions, { text: newQuestion }]);
+      } else if (currentFormType === "Dean") {
+        setDeanQuestions([...deanQuestions, { text: newQuestion }]);
+      }
     }
 
     setNewQuestion("");
   };
 
-  // Delete a question from the selected evaluation form
   const deleteQuestion = (index) => {
     if (currentFormType === "Subject" && selectedSubject) {
       setEvaluationForms((prevForms) => {
         const updatedQuestions = prevForms[selectedSubject].filter((_, i) => i !== index);
-        return {
-          ...prevForms,
-          [selectedSubject]: updatedQuestions,
-        };
+        return { ...prevForms, [selectedSubject]: updatedQuestions };
       });
     } else if (currentFormType === "Faculty") {
       setFacultyQuestions(facultyQuestions.filter((_, i) => i !== index));
@@ -90,7 +104,17 @@ const EvaluationToolsPage = () => {
     }
   };
 
-  // Save the evaluation form to Firestore
+  const handleEditQuestion = (index) => {
+    if (currentFormType === "Subject" && selectedSubject) {
+      setNewQuestion(evaluationForms[selectedSubject][index].text);
+    } else if (currentFormType === "Faculty") {
+      setNewQuestion(facultyQuestions[index].text);
+    } else if (currentFormType === "Dean") {
+      setNewQuestion(deanQuestions[index].text);
+    }
+    setEditingIndex(index); // Set the index of the question being edited
+  };
+
   const handleSaveForm = async () => {
     if (currentFormType === "Subject" && selectedSubject) {
       const formRef = doc(db, "evaluationForms", selectedSubject);
@@ -109,28 +133,14 @@ const EvaluationToolsPage = () => {
 
   useEffect(() => {
     fetchSubjects();
-    fetchFacultyEvaluationForm(); // Fetch faculty evaluation form on mount
-    fetchDeanEvaluationForm(); // Fetch dean evaluation form on mount
+    fetchFacultyEvaluationForm();
+    fetchDeanEvaluationForm();
   }, [fetchSubjects, fetchFacultyEvaluationForm, fetchDeanEvaluationForm]);
 
-  return (
-    <div>
-      <h2>Evaluation Reports</h2>
-      {selectedUserEvaluations.length === 0 ? (
-        <p>No evaluations found for the selected user.</p>
-      ) : (
-        <ul>
-          {selectedUserEvaluations.map((evaluation, index) => (
-            <li key={index}>
-              <p>Score: {evaluation.percentageScore}%</p>
-              <p>Details: {evaluation.scores.join(", ")}</p>
-            </li>
-          ))}
-        </ul>
-      )}
-
-      <h2>Create or Edit Evaluation Form for Subjects</h2>
-      <div>
+  return  (
+    <div className="evaluation-page">
+      <h2 className="evaluation-header">Create or Edit Evaluation Form for Subjects</h2>
+      <div className="question-form">
         <label htmlFor="subjectSelect">Select Subject:</label>
         <select
           id="subjectSelect"
@@ -147,73 +157,100 @@ const EvaluationToolsPage = () => {
             </option>
           ))}
         </select>
+  
+        {selectedSubject && currentFormType === "Subject" && (
+          <div>
+            <ul className="questions-list">
+              {(evaluationForms[selectedSubject] || []).map((question, index) => (
+                <li key={index}>
+                  {question.text}
+                  <div className="operation-buttons">
+                    <button className="edit-button" onClick={() => handleEditQuestion(index)}>Edit</button>
+                    <button className="delete-button" onClick={() => deleteQuestion(index)}>Delete</button>
+                  </div>
+                </li>
+              ))}
+            </ul>
+            <textarea
+              className="question-input"
+              value={newQuestion}
+              onChange={(e) => setNewQuestion(e.target.value)}
+              placeholder={editingIndex !== null ? "Edit the question" : "Add a new question"}
+            />
+            <div className="buttons-container">
+              <button className="save-button" onClick={addQuestion}>
+                {editingIndex !== null ? "Update Question" : "Add Question"}
+              </button>
+              <button className="cancel-button" onClick={() => setNewQuestion("")}>Cancel</button>
+            </div>
+            {/* Save form button for Subjects */}
+            <button onClick={handleSaveForm}>Save Subject Form</button>
+          </div>
+        )}
       </div>
-
-      {selectedSubject && currentFormType === "Subject" && (
-        <div>
-          <ul>
-            {(evaluationForms[selectedSubject] || []).map((question, index) => (
-              <li key={index}>
-                {question.text}
-                <button onClick={() => deleteQuestion(index)}>Delete</button>
-              </li>
-            ))}
-          </ul>
-          <input
-            type="text"
-            value={newQuestion}
-            onChange={(e) => setNewQuestion(e.target.value)}
-            placeholder="Add a new question"
-          />
-          <button onClick={addQuestion}>Add Question</button>
-          <button onClick={handleSaveForm}>Save Form</button>
-        </div>
-      )}
-
-      <h2>Create or Edit Evaluation Form for Faculty</h2>
-      <div>
-        <ul>
+  
+      <h2 className="evaluation-header">Create or Edit Evaluation Form for Faculty</h2>
+      <div className="question-form">
+        <ul className="questions-list">
           {facultyQuestions.map((question, index) => (
             <li key={index}>
               {question.text}
-              <button onClick={() => deleteQuestion(index)}>Delete</button>
+              <div className="operation-buttons">
+                <button className="edit-button" onClick={() => handleEditQuestion(index)}>Edit</button>
+                <button className="delete-button" onClick={() => deleteQuestion(index)}>Delete</button>
+              </div>
             </li>
           ))}
         </ul>
-        <input
-          type="text"
+        <textarea
+          className="question-input"
           value={newQuestion}
           onChange={(e) => {
             setNewQuestion(e.target.value);
             setCurrentFormType("Faculty");
           }}
-          placeholder="Add a new question"
+          placeholder={editingIndex !== null ? "Edit the question" : "Add a new question"}
         />
-        <button onClick={addQuestion}>Add Question</button>
-        <button onClick={handleSaveForm}>Save Form</button>
+        <div className="buttons-container">
+          <button className="save-button" onClick={addQuestion}>
+            {editingIndex !== null ? "Update Question" : "Add Question"}
+          </button>
+          <button className="cancel-button" onClick={() => setNewQuestion("")}>Cancel</button>
+        </div>
+        {/* Save form button for Faculty */}
+        <button onClick={handleSaveForm}>Save Faculty Form</button>
       </div>
-
-      <h2>Create or Edit Evaluation Form for Deans</h2>
-      <div>
-        <ul>
+  
+      <h2 className="evaluation-header">Create or Edit Evaluation Form for Deans</h2>
+      <div className="question-form">
+        <ul className="questions-list">
           {deanQuestions.map((question, index) => (
             <li key={index}>
               {question.text}
-              <button onClick={() => deleteQuestion(index)}>Delete</button>
+              <div className="operation-buttons">
+                <button className="edit-button" onClick={() => handleEditQuestion(index)}>Edit</button>
+                <button className="delete-button" onClick={() => deleteQuestion(index)}>Delete</button>
+              </div>
             </li>
           ))}
         </ul>
-        <input
-          type="text"
+        <textarea
+          className="question-input"
           value={newQuestion}
           onChange={(e) => {
             setNewQuestion(e.target.value);
             setCurrentFormType("Dean");
           }}
-          placeholder="Add a new question"
+          placeholder={editingIndex !== null ? "Edit the question" : "Add a new question"}
         />
-        <button onClick={addQuestion}>Add Question</button>
-        <button onClick={handleSaveForm}>Save Form</button>
+        <div className="buttons-container">
+          <button className="save-button" onClick={addQuestion}>
+            {editingIndex !== null ? "Update Question" : "Add Question"}
+          </button>
+          <button className="cancel-button" onClick={() => setNewQuestion("")}>Cancel</button>
+        </div>
+        {/* Save form button for Deans */}
+        <button onClick={handleSaveForm}>Save Dean Form</button>
       </div>
     </div>
   );
