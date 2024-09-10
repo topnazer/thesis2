@@ -29,7 +29,7 @@ function App() {
         <Route path="/acaf-dashboard" element={<AcafDashboard />} />
         <Route path="/view-evaluation/:facultyId" element={<ViewEvaluationPage />} />
         <Route path="/evaluation-report" element={<EvaluationReportPage />} />
-      </Routes>
+      </Routes> 
     </Router>
   );
 }

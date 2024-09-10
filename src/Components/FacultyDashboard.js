@@ -2,6 +2,8 @@ import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { getFirestore, doc, getDoc, collection, onSnapshot, query, where } from "firebase/firestore";
 import { auth } from "../firebase";
+import './facultydashboard.css';
+
 
 const FacultyDashboard = () => {
   const [evaluationForm, setEvaluationForm] = useState([]);

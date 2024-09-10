@@ -2,6 +2,7 @@ import React, { useEffect, useState, useCallback } from 'react';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { getFirestore, doc, getDoc, setDoc, collection } from 'firebase/firestore';
 import { auth } from '../firebase';
+import './Evaluate.css';  // New CSS file for styling
 
 const EvaluateFaculty = () => {
   const { facultyId } = useParams();
@@ -68,7 +69,6 @@ const EvaluateFaculty = () => {
     }
 
     try {
-      // Store the evaluation
       const evaluationRef = doc(collection(db, 'facultyEvaluations', facultyId, 'completed_evaluations'), user.uid);
       await setDoc(evaluationRef, {
         userId: user.uid,
@@ -79,7 +79,7 @@ const EvaluateFaculty = () => {
         createdAt: new Date(),
       });
 
-      // Update average score
+      // Update average score and completed evaluations in the main document
       const facultyEvaluationRef = doc(db, 'facultyEvaluations', facultyId);
       const facultyEvaluationDoc = await getDoc(facultyEvaluationRef);
       let newAverageScore;
@@ -94,7 +94,6 @@ const EvaluateFaculty = () => {
           completedEvaluations,
         }, { merge: true });
       } else {
-        // If no previous evaluations, set the first score as the average
         newAverageScore = percentageScore;
         await setDoc(facultyEvaluationRef, {
           averageScore: newAverageScore,
@@ -118,27 +117,44 @@ const EvaluateFaculty = () => {
   }
 
   return (
-    <div>
+    <div className="evaluation-form">
       <h1>Evaluate {faculty ? `${faculty.firstName} ${faculty.lastName}` : 'Faculty'}</h1>
       <h2>Department: {faculty ? faculty.department : 'No department available'}</h2>
+      <div className="rating-legend">
+        <p>Rating Legend</p>
+        <p>1 - Strongly Disagree | 2 - Disagree | 3 - Neutral | 4 - Agree | 5 - Strongly Agree</p>
+      </div>
       <form onSubmit={handleSubmit}>
-        {evaluationForm.map((question, index) => (
-          <div key={index}>
-            <label>{question.text}</label>
-            <select
-              value={responses[index] || ''}
-              onChange={(e) => handleResponseChange(index, e.target.value)}
-              required
-            >
-              <option value="" disabled>Select an option</option>
-              <option value="1">Strongly Agree</option>
-              <option value="2">Agree</option>
-              <option value="3">Neutral</option>
-              <option value="4">Disagree</option>
-              <option value="5">Strongly Disagree</option>
-            </select>
-          </div>
-        ))}
+        <table>
+          <thead>
+            <tr>
+              <th>Question</th>
+              <th>1</th>
+              <th>2</th>
+              <th>3</th>
+              <th>4</th>
+              <th>5</th>
+            </tr>
+          </thead>
+          <tbody>
+            {evaluationForm.map((question, index) => (
+              <tr key={index}>
+                <td>{question.text}</td>
+                {[1, 2, 3, 4, 5].map((value) => (
+                  <td key={value}>
+                    <input 
+                      type="radio" 
+                      name={`question-${index}`} 
+                      value={value} 
+                      checked={responses[index] === String(value)} 
+                      onChange={(e) => handleResponseChange(index, e.target.value)} 
+                    />
+                  </td>
+                ))}
+              </tr>
+            ))}
+          </tbody>
+        </table>
         <div>
           <label>Comments/Feedback</label>
           <textarea
